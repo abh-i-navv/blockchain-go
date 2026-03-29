@@ -3,15 +3,18 @@ package blockchain
 import "sync"
 
 type Blockchain struct {
-	mu     sync.RWMutex
-	Blocks []Block
+	mu         sync.RWMutex
+	Blocks     []Block
+	Difficulty int
 }
 
 func NewBlockchain() *Blockchain {
-	genesis := NewBlock(0, "Genesis Block", "")
+	difficulty := 3
+	genesis := NewBlock(0, []Transaction{}, "", difficulty)
 
 	return &Blockchain{
-		Blocks: []Block{genesis},
+		Blocks:     []Block{genesis},
+		Difficulty: difficulty,
 	}
 }
 
@@ -22,12 +25,12 @@ func (bc *Blockchain) GetLatestBlock() Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-func (bc *Blockchain) AddBlock(data string) Block {
+func (bc *Blockchain) AddBlock(txs []Transaction) Block {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
 
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := NewBlock(prevBlock.Index+1, data, prevBlock.Hash)
+	newBlock := NewBlock(prevBlock.Index+1, txs, prevBlock.Hash, bc.Difficulty)
 
 	bc.Blocks = append(bc.Blocks, newBlock)
 	return newBlock
