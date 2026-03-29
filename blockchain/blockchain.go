@@ -6,13 +6,13 @@ type Blockchain struct {
 	mu         sync.RWMutex
 	Blocks     []Block
 	Difficulty int
-	Storage    *Storage
+	Storage    *SQLiteStorage
 }
 
 func NewBlockchain() *Blockchain {
 	difficulty := 2
 
-	storage, err := NewStorage("./data")
+	storage, err := NewSQLiteStorage("blockchain.db")
 
 	if err != nil {
 		panic(err)
@@ -22,6 +22,7 @@ func NewBlockchain() *Blockchain {
 
 	if len(blocks) == 0 {
 		genesis := NewBlock(0, []Transaction{}, "", difficulty)
+		storage.SaveBlock(genesis)
 
 		return &Blockchain{
 			Blocks:     []Block{genesis},
