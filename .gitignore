@@ -4,7 +4,6 @@
 bin/
 build/
 dist/
-data/
 *.exe
 *.exe~
 *.dll
@@ -55,6 +54,7 @@ data/
 *.badger
 *.sst
 *.vlog
+MANIFEST
 
 # =========================
 # Temporary files
