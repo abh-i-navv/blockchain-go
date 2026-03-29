@@ -2,32 +2,78 @@ package main
 
 import (
 	"blockchain/blockchain"
+	"blockchain/internal/api"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
+func GetEnv(key, fallback string) string {
+	if key == "" {
+		return fallback
+	}
+	return os.Getenv(key)
+}
+
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("error in .env file")
+	}
+
 	bc := blockchain.NewBlockchain()
+	defer bc.Close()
 
-	tx1 := []blockchain.Transaction{
-		{From: "David", To: "John", Amount: 10},
-		{From: "Tony", To: "Mark", Amount: 10},
+	api := api.NewAPI(bc)
+	r := gin.Default()
+
+	r.GET("/blocks", api.GetBlocks)
+	r.POST("/transation", api.CreateTransaction)
+	r.POST("/mine", api.Mine)
+	r.POST("/balance", api.GetBalance)
+
+	// http.HandleFunc("/blocks", api.GetBlocks)
+	// http.HandleFunc("/transaction", api.CreateTransaction)
+	// http.HandleFunc("/mine", api.Mine)
+	// http.HandleFunc("/balance", api.GetBalance)
+
+	port := ":" + GetEnv("PORT", "8080")
+	fmt.Println("Server running on", port)
+	log.Fatal(http.ListenAndServe(port, nil))
+
+	alice := blockchain.NewWallet()
+	bob := blockchain.NewWallet()
+	carl := blockchain.NewWallet()
+
+	// mining money
+	bc.AddBlock([]blockchain.Transaction{}, alice.Public)
+
+	tx1 := blockchain.Transaction{
+		From:   alice.Public,
+		To:     bob.Public,
+		Amount: 40,
 	}
 
-	bc.AddBlock(tx1)
+	tx1.Sign(alice.Private)
 
-	tx2 := []blockchain.Transaction{
-		{From: "Carl", To: "Bob", Amount: 10},
+	bc.AddBlock([]blockchain.Transaction{tx1}, []byte{})
+
+	tx2 := blockchain.Transaction{
+		From:   alice.Public,
+		To:     carl.Public,
+		Amount: 40,
 	}
 
-	bc.AddBlock(tx2)
+	tx1.Sign(alice.Private)
 
-	for _, block := range bc.Blocks {
-		fmt.Printf("Index: %d\n", block.Index)
-		fmt.Printf("Transactions: %+v\n", block.Transactions)
-		fmt.Printf("Hash: %s\n", block.Hash)
-		fmt.Printf("PrevHash: %s\n", block.PrevHash)
-		fmt.Println("---------------------------")
-	}
+	bc.AddBlock([]blockchain.Transaction{tx2}, []byte{})
 
-	fmt.Println("Valid Blockchain: ", bc.IsValid())
+	fmt.Println("Alice balance: ", bc.GetBalance(alice.Public))
+	fmt.Println("Bob balance: ", bc.GetBalance(bob.Public))
+	fmt.Println("Carl balance: ", bc.GetBalance(carl.Public))
 }
