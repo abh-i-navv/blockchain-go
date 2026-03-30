@@ -57,10 +57,13 @@ func (api *API) CreateTransaction(c *gin.Context) {
 		Amount: req.Amount,
 	}
 
-	api.bc.AddBlock([]blockchain.Transaction{tx}, parseAddress(req.From))
-
+	err := api.bc.AddTransaction(tx)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "transaction added",
+		"message": "transaction added to mempool",
 	})
 }
 
@@ -74,7 +77,7 @@ func (api *API) Mine(c *gin.Context) {
 		return
 	}
 
-	api.bc.AddBlock([]blockchain.Transaction{}, parseAddress(req.Miner))
+	api.bc.MineBlock([]byte(req.Miner))
 
 	c.JSON(200, gin.H{
 		"message": "block mined",

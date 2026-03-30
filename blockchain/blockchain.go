@@ -1,12 +1,15 @@
 package blockchain
 
-import "sync"
+import (
+	"sync"
+)
 
 type Blockchain struct {
 	mu         sync.RWMutex
 	Blocks     []Block
 	Difficulty int
 	Storage    *SQLiteStorage
+	Mempool    []Transaction
 }
 
 func NewBlockchain() *Blockchain {
@@ -45,7 +48,7 @@ func (bc *Blockchain) GetLatestBlock() Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-func (bc *Blockchain) AddBlock(txs []Transaction, miner []byte) Block {
+func (bc *Blockchain) MineBlock(miner []byte) Block {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
 
@@ -66,16 +69,23 @@ func (bc *Blockchain) AddBlock(txs []Transaction, miner []byte) Block {
 			from := string(tx.From)
 			to := string(tx.To)
 
-			if tempBal[from] < tx.Amount {
-				continue
-			}
-
 			tempBal[from] -= tx.Amount
 			tempBal[to] += tx.Amount
+		}
+	}
 
-			if bc.IsValidTransactionUnsafe(tx) {
-				validTxs = append(validTxs, tx)
-			}
+	for _, tx := range bc.Mempool {
+		from := string(tx.From)
+		to := string(tx.To)
+
+		tempBal[from] -= tx.Amount
+		tempBal[to] += tx.Amount
+
+		if tempBal[from] < tx.Amount {
+			continue
+		}
+		if bc.IsValidTransactionUnsafe(tx) {
+			validTxs = append(validTxs, tx)
 		}
 	}
 
@@ -84,6 +94,8 @@ func (bc *Blockchain) AddBlock(txs []Transaction, miner []byte) Block {
 
 	bc.Blocks = append(bc.Blocks, newBlock)
 	bc.Storage.SaveBlock(newBlock)
+
+	bc.Mempool = []Transaction{}
 	return newBlock
 }
 
@@ -162,4 +174,16 @@ func (bc *Blockchain) Close() {
 	if bc.Storage != nil {
 		bc.Storage.Close()
 	}
+}
+
+func (bc *Blockchain) AddTransaction(tx Transaction) error {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+
+	// if !tx.Verify() {
+	// 	return fmt.Errorf("invalid signature")
+	// }
+
+	bc.Mempool = append(bc.Mempool, tx)
+	return nil
 }

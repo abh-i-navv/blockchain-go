@@ -58,9 +58,9 @@ func main() {
 		Handler: r,
 	}
 
-	alice := blockchain.NewWallet()
-	bob := blockchain.NewWallet()
-	carl := blockchain.NewWallet()
+	// alice := blockchain.NewWallet()
+	// bob := blockchain.NewWallet()
+	// carl := blockchain.NewWallet()
 
 	// mining money
 	// bc.AddBlock([]blockchain.Transaction{}, alice.Public)
@@ -85,9 +85,9 @@ func main() {
 
 	// bc.AddBlock([]blockchain.Transaction{tx2}, []byte{})
 
-	fmt.Println("Alice balance: ", bc.GetBalance(alice.Public))
-	fmt.Println("Bob balance: ", bc.GetBalance(bob.Public))
-	fmt.Println("Carl balance: ", bc.GetBalance(carl.Public))
+	// fmt.Println("Alice balance: ", bc.GetBalance(alice.Public))
+	// fmt.Println("Bob balance: ", bc.GetBalance(bob.Public))
+	// fmt.Println("Carl balance: ", bc.GetBalance(carl.Public))
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
